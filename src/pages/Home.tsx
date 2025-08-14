@@ -10,8 +10,6 @@ const Home: React.FC = () => {
         </p>
         <p className="text-lg font-semibold text-orange-500">Let's cook something amazing today!</p>
       </div>
-
-      {/* <img src={recipeImage} alt="Delicious recipes" className="mt-auto w-full max-w-xl" /> */}
     </div>
   );
 };

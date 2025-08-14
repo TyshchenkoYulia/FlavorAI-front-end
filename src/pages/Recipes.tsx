@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface Recipe {
   id: number;
   title: string;
-  ingredients: string;
-  instructions: string;
-  rating: number;
+  description: string;
   author: string;
 }
 
@@ -16,26 +14,45 @@ interface Props {
 const Recipes: React.FC<Props> = ({ user }) => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [title, setTitle] = useState('');
-  const [ingredients, setIngredients] = useState('');
-  const [instructions, setInstructions] = useState('');
+  const [description, setDescription] = useState('');
+
+  const token = localStorage.getItem('token');
+
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch('http://localhost:5000/recipes', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to fetch recipes');
+        const data = await res.json();
+
+        const mapped = data.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          author: r.user.name,
+        }));
+        setRecipes(mapped);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchRecipes();
+  }, [token]);
 
   const addRecipe = () => {
+    if (!title || !description) return;
     const newRecipe: Recipe = {
       id: Date.now(),
       title,
-      ingredients,
-      instructions,
-      rating: 0,
+      description,
       author: user.name,
     };
     setRecipes([newRecipe, ...recipes]);
     setTitle('');
-    setIngredients('');
-    setInstructions('');
-  };
-
-  const rateRecipe = (id: number, rating: number) => {
-    setRecipes(recipes.map((r) => (r.id === id ? { ...r, rating } : r)));
+    setDescription('');
   };
 
   const userRecipes = recipes.filter((r) => r.author === user.name);
@@ -44,7 +61,6 @@ const Recipes: React.FC<Props> = ({ user }) => {
     <div className="mx-auto max-w-4xl p-8">
       <h1 className="mb-4 text-3xl font-bold">Recipes</h1>
 
-      {/* Додавання нового рецепту */}
       <div className="mb-6 rounded bg-gray-100 p-4">
         <h2 className="mb-2 text-xl font-semibold">Add a Recipe</h2>
         <input
@@ -55,15 +71,9 @@ const Recipes: React.FC<Props> = ({ user }) => {
           className="mb-2 w-full rounded border p-2"
         />
         <textarea
-          placeholder="Ingredients"
-          value={ingredients}
-          onChange={(e) => setIngredients(e.target.value)}
-          className="mb-2 w-full rounded border p-2"
-        />
-        <textarea
-          placeholder="Instructions"
-          value={instructions}
-          onChange={(e) => setInstructions(e.target.value)}
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           className="mb-2 w-full rounded border p-2"
         />
         <button
@@ -74,31 +84,11 @@ const Recipes: React.FC<Props> = ({ user }) => {
         </button>
       </div>
 
-      {/* Власні рецепти */}
       <h2 className="mb-2 text-2xl font-semibold">Your Recipes</h2>
       {userRecipes.map((r) => (
         <div key={r.id} className="mb-4 rounded bg-white p-4 shadow">
           <h3 className="text-xl font-bold">{r.title}</h3>
-          <p>
-            <strong>Ingredients:</strong> {r.ingredients}
-          </p>
-          <p>
-            <strong>Instructions:</strong> {r.instructions}
-          </p>
-          <p>
-            <strong>Rating:</strong> {r.rating} ⭐
-          </p>
-          <div className="mt-2 flex gap-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <button
-                key={i}
-                onClick={() => rateRecipe(r.id, i)}
-                className="rounded bg-yellow-300 px-2 hover:bg-yellow-400"
-              >
-                {i} ⭐
-              </button>
-            ))}
-          </div>
+          <p>{r.description}</p>
         </div>
       ))}
     </div>

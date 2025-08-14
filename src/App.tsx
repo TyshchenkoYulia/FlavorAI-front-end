@@ -37,7 +37,6 @@ const App: React.FC = () => {
   );
 };
 
-// Обгортки для передачі setUser
 const LoginWrapper: React.FC<{ setUser: (user: User) => void }> = ({ setUser }) => {
   return <Login onLogin={setUser} />;
 };
