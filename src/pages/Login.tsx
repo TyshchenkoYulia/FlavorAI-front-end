@@ -1,42 +1,65 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
-const Login: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+interface LoginProps {
+  onLogin: (user: { name: string; email: string }) => void;
+}
 
-  const handleSubmit = (e: React.FormEvent) => {
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login:", { email, password });
+    setError('');
+
+    try {
+      const res = await fetch('http://localhost:5000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const { message } = await res.json();
+        throw new Error(message || 'Login failed');
+      }
+
+      const data = await res.json();
+
+      localStorage.setItem('token', data.token);
+      onLogin(data.user);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred');
+      }
+    }
   };
 
   return (
-    <div className="p-8 max-w-md mx-auto mt-12 bg-white shadow-lg rounded-lg">
-      <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
-          required
-        />
-        <button
-          type="submit"
-          className="bg-green-500 hover:bg-green-600 text-white p-3 rounded w-full transition-colors duration-300"
-        >
-          Login
-        </button>
-      </form>
-    </div>
+    <form onSubmit={handleSubmit} className="mx-auto max-w-sm p-4">
+      <h2 className="mb-4 text-xl font-bold">Login</h2>
+      {error && <p className="text-red-500">{error}</p>}
+      <input
+        type="email"
+        placeholder="Email"
+        className="mb-2 w-full border p-2"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        className="mb-2 w-full border p-2"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <button type="submit" className="bg-green-500 px-4 py-2 text-white">
+        Login
+      </button>
+    </form>
   );
 };
 
